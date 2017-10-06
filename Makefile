@@ -55,7 +55,7 @@ lint: ## check style with flake8
 
 test: ## run tests quickly with the default Python
 	pytest
-	
+
 
 test-all: ## run tests on every Python version with tox
 	tox
@@ -69,7 +69,7 @@ coverage-report: coverage ## check code coverage and view report in the browser
 	$(BROWSER) tmp/coverage/index.html
 
 docs: ## generate Sphinx HTML documentation, including API docs
-	rm -f docs/django-model-cleanup.rst
+	rm -f docs/django_model_cleanup.rst
 	rm -f docs/modules.rst
 	sphinx-apidoc -o docs/ src
 	$(MAKE) -C docs clean
