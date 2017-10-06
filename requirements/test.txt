@@ -1,0 +1,14 @@
+-r base.txt
+coverage
+mock
+flake8
+tox
+codecov
+factory-boy
+watchdog
+pytest
+pytest-xdist
+pytest-html
+pytest-runner
+pytest-cov
+
