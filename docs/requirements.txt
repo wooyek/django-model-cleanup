@@ -2,3 +2,5 @@ sphinx>=1.3
 sphinx-rtd-theme
 # https://github.com/sphinx-doc/sphinx/issues/3212
 docutils==0.13.1
+# We use __version__ from the package we need to install it on ReadTheDocs
+-e .
