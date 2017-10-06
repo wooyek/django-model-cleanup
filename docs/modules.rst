@@ -1,5 +1,5 @@
-src
-===
+Api docs
+========
 
 .. toctree::
    :maxdepth: 4
