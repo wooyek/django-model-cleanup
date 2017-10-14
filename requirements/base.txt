@@ -3,3 +3,4 @@
 # Local proprietary packages
 --find-links=requirements
 # Other dependencies
+django

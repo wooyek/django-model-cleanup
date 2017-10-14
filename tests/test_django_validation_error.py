@@ -1,20 +1,16 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# coding=utf-8
+"""
+Here We're testing assumptions about django's ValidationError class
 
-"""Tests for `django-model-cleanup` package."""
-
+ValidationError init is a hackish mess at best. It's hard to grasp what it does exactly and why.
+But we'll no there to judge but to make sure we have a place to check what it does and what to expect.
+"""
 import pytest
-
-import django_model_cleanup
-
-django_model_cleanup.__version__
-from django_model_cleanup.errors import ExtensibleValidationError as ValidationError
-
-import pytest
-from django.core.exceptions import NON_FIELD_ERRORS
+from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 from django.db.models.fields.related import ForeignKey
 from django.forms.utils import ErrorDict, ErrorList
 from django.utils import translation
+from django.utils.translation import ugettext as __, ugettext_lazy as _
 
 
 def test_init_with_string():
@@ -57,6 +53,8 @@ def test_init_with_dict():
 
     # all this will be flattened with messages property
     assert v.messages == ['A test error message']
+    # and normalize messages in a dict as s list
+    assert v.message_dict == {'field': ['A test error message']}
 
 
 def test_init_with_string_list():
@@ -88,8 +86,8 @@ def test_init_with_string_list():
 def test_init_with_dict_and_params():
     v = ValidationError({'field': 'Not true: %s>%s'}, params=(1, 2))
     # Sorry params do not work with dict
-    assert v.messages == ['Not true: 1>2']
-    # Done!
+    assert v.messages == ['Not true: %s>%s']
+    # TODO: Make sure params work with dict initialization
 
     # to overcome this we need to pass a validation error instance
     inner = ValidationError('Not true: %s>%s', params=(1, 2))
@@ -97,15 +95,16 @@ def test_init_with_dict_and_params():
     # Sorry params do not work with dict
     assert v.messages == ['Not true: 1>2']
     # this is hack'y
-    # but we still have an error dict, few!
+    # but we still have an error dict and message dict, few!
     assert v.error_dict == {'field': [inner]}
+    assert v.message_dict == {'field': ['Not true: 1>2']}
 
 
 def test_init_with_list_and_params():
     v = ValidationError(['Not true: %s>%s', 'Yep, still wrong %s>%s'], params=(1, 2))
-    # params do not work with list work
-    assert v.messages == ['Not true: 1>2', 'Yep, still wrong 1>2']
-    # DONE: Make sure params work with list initialization
+    # Sorry params do not work with list also
+    assert v.messages == ['Not true: %s>%s', 'Yep, still wrong %s>%s']
+    # TODO: Make sure params work with list initialization
 
 
 @pytest.fixture
@@ -140,6 +139,7 @@ def test_init_with_dict_and_params_and_translation(polish_language):
     v = ValidationError({'some_field': v})
     # when asked for message will be translated
     assert v.messages == ["Foo z polem Bar o wartości 'Baz' nie istnieje."]
+    assert v.message_dict == {'some_field': ["Foo z polem Bar o wartości 'Baz' nie istnieje."]}
 
     # is still stored as lazy object
     assert v.error_dict['some_field'][0].message.__class__.__name__ == '__proxy__'
@@ -147,6 +147,8 @@ def test_init_with_dict_and_params_and_translation(polish_language):
     # and changing the language has still a desired effect
     translation.activate('fr')
     assert v.messages == ["L'instance Foo avec 'Baz' dans Bar n'existe pas."]
+    assert v.message_dict == {'some_field': ["L'instance Foo avec 'Baz' dans Bar n'existe pas."]}
+
 
 
 def test_concat_errors_simple():
@@ -165,10 +167,15 @@ def test_concat_errors_with_field_keys():
     v2 = ValidationError({'b': 'bar'})
     error = ValidationError([v1, v2])
     assert error.messages == ['foo', 'bar']
-    # in this version error dict is here
-    assert hasattr(error, 'error_dict')
-    # DONE: Preserve error_dict {field: messages} with concatenations
-    assert error.message_dict == {'a': ['foo'], 'b': ['bar']}
+    # no error dict, huh?
+    assert not hasattr(error, 'error_dict ')
+    # but there is error_list with them, right?
+    # no
+    assert error.error_list[0] != v1
+    # maybe its somewhat similar copy, it should have error_dict
+    # no
+    assert not hasattr(error.error_list[0], 'error_dict')
+    # TODO: Preserve error_dict {field: messages} with concatenations
 
 
 def test_concat_errors_with_field_and_params():
@@ -176,8 +183,8 @@ def test_concat_errors_with_field_and_params():
     v1 = ValidationError({'field': 'Not true: %s>%s'}, params=(1, 2))
     v2 = ValidationError({'field': 'Also Not true: %s>%s'}, params=(1, 3))
     error = ValidationError([v1, v2])
-    # our version remembers params so string formatting works!
-    assert error.messages == ['Not true: 1>2', 'Also Not true: 1>3']
+    # sorry, we already know that params do no work with dict init, see test_init_with_dict_and_params
+    assert error.messages == ['Not true: %s>%s', 'Also Not true: %s>%s']
 
     # but there was a hack
     v1 = ValidationError('Not true: %s>%s', params=(1, 2))
@@ -187,8 +194,9 @@ def test_concat_errors_with_field_and_params():
     error = ValidationError([v1, v2])
     # yay, it still works
     assert error.messages == ['Not true: 1>2', 'Also Not true: 1>3']
-    # and in this version error dict is present
-    assert error.message_dict == {'field': ['Not true: 1>2', 'Also Not true: 1>3']}
+    # but, still no error_dict
+    assert not hasattr(error, 'error_dict ')
+    assert not hasattr(error.error_list[0], 'error_dict')
 
 
 def test_concat_translated_errors(polish_language):
@@ -212,7 +220,9 @@ def test_concat_translated_errors_and_fields(polish_language):
     assert error.messages == ["Foo z polem Bar o wartości 'Baz' nie istnieje."]
     translation.activate('fr')
     assert error.messages == ["L'instance Foo avec 'Baz' dans Bar n'existe pas."]
-    assert error.message_dict == {'boo': ["L'instance Foo avec 'Baz' dans Bar n'existe pas."]}
+    # but, still no error_dict
+    assert not hasattr(error, 'error_dict ')
+    assert not hasattr(error.error_list[0], 'error_dict')
 
 
 def test_forms_error_dict():

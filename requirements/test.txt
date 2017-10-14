@@ -11,4 +11,5 @@ pytest-xdist
 pytest-html
 pytest-runner
 pytest-cov
+pytest-django
 
