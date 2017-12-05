@@ -1,4 +1,6 @@
 # coding=utf-8
+from __future__ import unicode_literals
+
 import inspect
 
 from django.core.exceptions import ValidationError
@@ -17,7 +19,7 @@ class CleanMixin(object):
 
 
 class ValidationManager(object):
-    def __init__(self, model, clean_methods=None) -> None:
+    def __init__(self, model, clean_methods=None):
         self.errors = []
         self.model = model
         self.clean_methods = clean_methods or [method for method in dir(model) if method.startswith('clean_') and callable(getattr(model, method))]

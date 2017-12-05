@@ -5,12 +5,19 @@ Here We're testing assumptions about django's ValidationError class
 ValidationError init is a hackish mess at best. It's hard to grasp what it does exactly and why.
 But we'll no there to judge but to make sure we have a place to check what it does and what to expect.
 """
+from __future__ import unicode_literals
+
 import pytest
 from django.core.exceptions import ValidationError
 from django.db.models.fields.related import ForeignKey
 from django.forms.utils import ErrorDict, ErrorList
 from django.utils import translation
 from django.utils.translation import override
+
+# This will be formatted differently on py27
+EN_MESSAGE = "Foo instance with Bar %r does not exist." % 'Baz'
+PL_MESSAGE = "Foo z polem Bar o wartości %r nie istnieje." % 'Baz'
+FR_MESSAGE = "L'instance Foo avec %r dans Bar n'existe pas." % 'Baz'
 
 
 def test_init_with_string():
@@ -124,12 +131,12 @@ def test_init_with_translated_text(polish_language):
     # Add formatting and language
     v = get_translated_validation_error()
     # when asked for message will be translated
-    assert v.messages == ["Foo z polem Bar o wartości 'Baz' nie istnieje."]
+    assert v.messages == [PL_MESSAGE]
     # but is stored as lazy object
     assert v.message.__class__.__name__ == '__proxy__'
     # so changing the language is no problem
-    translation.activate('fr')
-    assert v.messages == ["L'instance Foo avec 'Baz' dans Bar n'existe pas."]
+    with translation.override('fr'):
+        assert v.messages == [FR_MESSAGE]
 
 
 def test_init_with_dict_and_params_and_translation(polish_language):
@@ -138,16 +145,16 @@ def test_init_with_dict_and_params_and_translation(polish_language):
     # Params encapsulation still works with translated strings. Cool.
     v = ValidationError({'some_field': v})
     # when asked for message will be translated
-    assert v.messages == ["Foo z polem Bar o wartości 'Baz' nie istnieje."]
-    assert v.message_dict == {'some_field': ["Foo z polem Bar o wartości 'Baz' nie istnieje."]}
+    assert v.messages == [PL_MESSAGE]
+    assert v.message_dict == {'some_field': [PL_MESSAGE]}
 
     # is still stored as lazy object
     assert v.error_dict['some_field'][0].message.__class__.__name__ == '__proxy__'
 
     # and changing the language has still a desired effect
-    translation.activate('fr')
-    assert v.messages == ["L'instance Foo avec 'Baz' dans Bar n'existe pas."]
-    assert v.message_dict == {'some_field': ["L'instance Foo avec 'Baz' dans Bar n'existe pas."]}
+    with translation.override('fr'):
+        assert v.messages == [FR_MESSAGE]
+        assert v.message_dict == {'some_field': [FR_MESSAGE]}
 
 
 def test_concat_errors_simple():
@@ -204,9 +211,9 @@ def test_concat_translated_errors(polish_language):
     error = ValidationError([v])
 
     # yay, works
-    assert error.messages == ["Foo z polem Bar o wartości 'Baz' nie istnieje."]
+    assert error.messages == [PL_MESSAGE]
     translation.activate('fr')
-    assert error.messages == ["L'instance Foo avec 'Baz' dans Bar n'existe pas."]
+    assert error.messages == [FR_MESSAGE]
 
 
 def test_concat_translated_errors_and_fields(polish_language):
@@ -216,9 +223,9 @@ def test_concat_translated_errors_and_fields(polish_language):
     error = ValidationError([v])
 
     # yup, still works
-    assert error.messages == ["Foo z polem Bar o wartości 'Baz' nie istnieje."]
+    assert error.messages == [PL_MESSAGE]
     translation.activate('fr')
-    assert error.messages == ["L'instance Foo avec 'Baz' dans Bar n'existe pas."]
+    assert error.messages == [FR_MESSAGE]
     # but, still no error_dict
     assert not hasattr(error, 'error_dict ')
     assert not hasattr(error.error_list[0], 'error_dict')
@@ -244,7 +251,7 @@ def test_forms_error_dict():
         form_field_errors = form_errors.setdefault(field, ErrorList())
         form_field_errors.extend(errors)
 
-    assert form_errors == {'boo': ["Foo instance with Bar 'Baz' does not exist."], 'zap': ['An error here!', 'Yet another one!']}
+    assert form_errors == {'boo': [EN_MESSAGE], 'zap': ['An error here!', 'Yet another one!']}
     # Let's find out how language change will affect the result
     with override('fr'):
-        assert form_errors == {'boo': ["L'instance Foo avec 'Baz' dans Bar n'existe pas."], 'zap': ['An error here!', 'Yet another one!']}
+        assert form_errors == {'boo': [FR_MESSAGE], 'zap': ['An error here!', 'Yet another one!']}
