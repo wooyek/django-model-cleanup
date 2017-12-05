@@ -238,3 +238,6 @@ def test_forms_error_dict():
         form_field_errors.extend(errors)
 
     assert form_errors == {'boo': ["Foo instance with Bar 'Baz' does not exist."], 'zap': ['An error here!', 'Yet another one!']}
+    # Let's find out how language change will affect the result
+    translation.activate('fr')
+    assert form_errors == {'boo': ["L'instance Foo avec 'Baz' dans Bar n'existe pas."], 'zap': ['An error here!', 'Yet another one!']}

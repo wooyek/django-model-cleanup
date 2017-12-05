@@ -2,7 +2,7 @@
 from collections import OrderedDict
 
 import six
-from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
+from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
 from django.utils.encoding import force_text
 
 
@@ -35,25 +35,30 @@ class ExtensibleValidationError(ValidationError):
             self.error_dict = {}
             for field, messages in message.items():
                 if not isinstance(messages, ExtensibleValidationError):
+                    # Let's pass on code and params along with messages from dict
                     messages = ExtensibleValidationError(messages, code, params)
                 self.error_dict[field] = messages.error_list
 
         elif isinstance(message, list):
             self.error_list = []
             for item in message:
-                # Normalize plain strings to instances of ValidationError.
                 if not isinstance(item, ExtensibleValidationError):
+                    # Normalize plain strings to instances of ValidationError.
                     item = ExtensibleValidationError(item, code, params)
                 if hasattr(item, 'error_dict') and hasattr(self, 'error_list'):
+                    # Convert self from list to dict and prepare for dict update later on
                     self.error_dict = OrderedDict()
                     if self.error_list:
                         self.error_dict[NON_FIELD_ERRORS] = self.error_list
                     del self.error_list
                 if hasattr(self, 'error_list'):
+                    # Extend error_list with passed in item.error_list
                     self.error_list.extend(item.error_list)
                 elif hasattr(item, 'error_list'):
+                    # Extend __all__ errors with passed in item.error_list
                     self.error_dict.setdefault(NON_FIELD_ERRORS, []).extend(item.error_list)
                 else:
+                    # Concat error dictionaries
                     for field, errors in item.error_dict.items():
                         self.error_dict.setdefault(field, []).extend(errors)
         else:

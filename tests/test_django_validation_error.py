@@ -6,11 +6,10 @@ ValidationError init is a hackish mess at best. It's hard to grasp what it does 
 But we'll no there to judge but to make sure we have a place to check what it does and what to expect.
 """
 import pytest
-from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
+from django.core.exceptions import ValidationError
 from django.db.models.fields.related import ForeignKey
 from django.forms.utils import ErrorDict, ErrorList
 from django.utils import translation
-from django.utils.translation import ugettext as __, ugettext_lazy as _
 
 
 def test_init_with_string():
@@ -245,3 +244,6 @@ def test_forms_error_dict():
         form_field_errors.extend(errors)
 
     assert form_errors == {'boo': ["Foo instance with Bar 'Baz' does not exist."], 'zap': ['An error here!', 'Yet another one!']}
+    # Let's find out how language change will affect the result
+    translation.activate('fr')
+    assert form_errors == {'boo': ["L'instance Foo avec 'Baz' dans Bar n'existe pas."], 'zap': ['An error here!', 'Yet another one!']}
