@@ -89,7 +89,7 @@ def test_init_with_dict_and_params():
     v = ValidationError({'field': 'Not true: %s>%s'}, params=(1, 2))
     # Sorry params do not work with dict
     assert v.messages == ['Not true: 1>2']
-    # Done!
+    # DONE: Make sure params work with dict initialization
 
     # to overcome this we need to pass a validation error instance
     inner = ValidationError('Not true: %s>%s', params=(1, 2))
@@ -103,7 +103,7 @@ def test_init_with_dict_and_params():
 
 def test_init_with_list_and_params():
     v = ValidationError(['Not true: %s>%s', 'Yep, still wrong %s>%s'], params=(1, 2))
-    # params do not work with list work
+    # params work with list
     assert v.messages == ['Not true: 1>2', 'Yep, still wrong 1>2']
     # DONE: Make sure params work with list initialization
 
@@ -140,6 +140,7 @@ def test_init_with_dict_and_params_and_translation(polish_language):
     v = ValidationError({'some_field': v})
     # when asked for message will be translated
     assert v.messages == ["Foo z polem Bar o wartości 'Baz' nie istnieje."]
+    assert v.message_dict == {'some_field': ["Foo z polem Bar o wartości 'Baz' nie istnieje."]}
 
     # is still stored as lazy object
     assert v.error_dict['some_field'][0].message.__class__.__name__ == '__proxy__'
@@ -147,6 +148,7 @@ def test_init_with_dict_and_params_and_translation(polish_language):
     # and changing the language has still a desired effect
     translation.activate('fr')
     assert v.messages == ["L'instance Foo avec 'Baz' dans Bar n'existe pas."]
+    assert v.message_dict == {'some_field': ["L'instance Foo avec 'Baz' dans Bar n'existe pas."]}
 
 
 def test_concat_errors_simple():

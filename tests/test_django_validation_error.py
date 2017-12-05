@@ -150,7 +150,6 @@ def test_init_with_dict_and_params_and_translation(polish_language):
     assert v.message_dict == {'some_field': ["L'instance Foo avec 'Baz' dans Bar n'existe pas."]}
 
 
-
 def test_concat_errors_simple():
     # you can't raise multiple validation exceptions
     # and giving them to user one after another is a bad UX
