@@ -1,4 +1,5 @@
-* Django Model Validation Cleanup version:
+* Django Model Cleanup version:
+* Django version:
 * Python version:
 * Operating System:
 

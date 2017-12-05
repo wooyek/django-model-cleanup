@@ -47,21 +47,26 @@ clean-test: ## remove test and coverage artifacts
 	rm -f .coverage
 	rm -fr htmlcov/
 
+isort:
+	isort --verbose --recursive src tests setup.py
+
 lint: ## check style with flake8
+	flake8 src tests setup.py manage.py
+	isort --verbose --check-only --diff --recursive src tests setup.py
 	python setup.py check --strict --metadata --restructuredtext
 	check-manifest  --ignore .idea,.idea/* .
-	flake8 src tests setup.py
-	isort --verbose --check-only --diff --recursive src tests setup.py
 
 test: ## run tests quickly with the default Python
 	pytest
 
+tox: ## run tests on every Python version with tox
+	tox --skip-missing-interpreters --recreate -e clean,py35-django-111,check,report,docs,spell
 
-test-all: ## run tests on every Python version with tox
-	tox
+detox: ## run tests on every Python version with tox
+	detox --skip-missing-interpreters --recreate -e clean,py35-django-111,check,report,docs,spell
 
 coverage: ## check code coverage quickly with the default Python
-	coverage run --source src -m pytest
+	coverage run --source src --parallel-mode setup.py test
 
 coverage-report: coverage ## check code coverage and view report in the browser
 	coverage report -m
@@ -69,7 +74,7 @@ coverage-report: coverage ## check code coverage and view report in the browser
 	$(BROWSER) tmp/coverage/index.html
 
 docs: ## generate Sphinx HTML documentation, including API docs
-	rm -f docs/django_model_cleanup.rst
+	rm -f docs/django_model_cleanup*.rst
 	rm -f docs/modules.rst
 	sphinx-apidoc -o docs/ -H "Api docs" src
 	$(MAKE) -C docs clean
@@ -107,7 +112,12 @@ sync: ## Sync master and develop branches in both directions
 bump: ## increment version number
 	bumpversion patch
 
-release: sync test-all bump publish ## package and upload a release
+upgrade: ## upgrade frozen requirements to the latest version
+	pipenv install -r requirements/production.txt
+	pipenv install --dev -r requirements/development.txt
+	pipenv lock --requirements > requirements.txt
+
+release: sync bump publish ## build new package version release then upload to pypi
 	git checkout develop
 	git merge master --verbose
 	git push origin develop --verbose

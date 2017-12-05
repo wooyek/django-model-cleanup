@@ -1,5 +1,5 @@
-Welcome to Django Model Validation Cleanup's documentation!
-===========================================================
+Welcome to Django Model Cleanup's documentation!
+================================================
 
 Contents:
 

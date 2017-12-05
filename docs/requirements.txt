@@ -1,6 +1,9 @@
-sphinx>=1.3
+sphinx>=1.6.5
 sphinx-rtd-theme
 # https://github.com/sphinx-doc/sphinx/issues/3212
 docutils==0.13.1
-# We use __version__ from the package we need to install it on ReadTheDocs
--e .
+django
+django-environ
+sphinxcontrib-spelling
+pyenchant
+-r ../requirements/optional.txt

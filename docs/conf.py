@@ -30,8 +30,34 @@ project_root = os.path.dirname(cwd)
 # This lets us ensure that the source package is imported, and that its
 # version is used.
 sys.path.insert(0, project_root)
+sys.path.insert(0, os.path.join(project_root, 'src'))
 
+
+def setup_django():
+    import django
+    from django.conf import settings
+    from tests.settings import INSTALLED_APPS
+    settings.configure(INSTALLED_APPS=INSTALLED_APPS)
+    django.setup()
+
+setup_django()
 import django_model_cleanup
+
+autodoc_default_flags = ['members',]
+autosummary_generate = True
+modindex_common_prefix = ['django_model_cleanup.']
+# html_domain_indices = ['py-modindex']  # ignore np-modindex
+
+# TODO: Remove those ignores once you setup monitoring services and their links in documentation
+linkcheck_ignore = [
+    r'https://saythanks.io/to/.+',
+    r'https://django-model-cleanup.readthedocs.io.*',
+    r'https://codeclimate.com/github/wooyek/django-model-cleanup.*',
+    r'https://github.com/wooyek/django-model-cleanup.*',
+    r'https://codecov.io/gh/wooyek/django-reusable.*',
+    r'https://coveralls.io/github/wooyek/django-model-cleanup.*',
+    r'https://pypi.python.org/pypi/django-model-cleanup',
+]
 
 # -- General configuration ---------------------------------------------
 
@@ -40,7 +66,12 @@ import django_model_cleanup
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode']
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.autosummary',
+    'sphinxcontrib.spelling',
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -55,7 +86,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Django Model Validation Cleanup'
+project = u'Django Model Cleanup'
 copyright = u"2017, Janusz Skonieczny"
 
 # The version info for the project you're documenting, acts as replacement
@@ -188,7 +219,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'django_model_cleanupdoc'
+htmlhelp_basename = 'django_model_cleanup_doc'
 
 
 # -- Options for LaTeX output ------------------------------------------
@@ -209,7 +240,7 @@ latex_elements = {
 # [howto/manual]).
 latex_documents = [
     ('index', 'django-model-cleanup.tex',
-     u'Django Model Validation Cleanup Documentation',
+     u'Django Model Cleanup Documentation',
      u'Janusz Skonieczny', 'manual'),
 ]
 
@@ -240,7 +271,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'django-model-cleanup',
-     u'Django Model Validation Cleanup Documentation',
+     u'Django Model Cleanup Documentation',
      [u'Janusz Skonieczny'], 1)
 ]
 
@@ -255,7 +286,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     ('index', 'django-model-cleanup',
-     u'Django Model Validation Cleanup Documentation',
+     u'Django Model Cleanup Documentation',
      u'Janusz Skonieczny',
      'django-model-cleanup',
      'One line description of project.',

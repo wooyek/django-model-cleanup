@@ -29,13 +29,9 @@ install_requires = parse_requirements(
 )
 
 test_requirements = parse_requirements(
-    os.path.join(os.path.dirname(__file__), "requirements", "test.txt"),
+    os.path.join(os.path.dirname(__file__), "requirements", "testing.txt"),
     session=uuid.uuid1()
 )
-
-setup_requirements = [
-    'pytest-runner',
-]
 
 
 def get_version(*file_paths):
@@ -82,28 +78,37 @@ setup(
     author="Janusz Skonieczny",
     author_email='js+pypi@bravelabs.pl',
     url='https://github.com/wooyek/django-model-cleanup',
-    packages=find_packages('src'),
+    packages=find_packages('src', exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     package_dir={'': 'src'},
     py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
+    entry_points={
+        'console_scripts': [
+            'django_model_cleanup=django_model_cleanup.cli:main'
+        ]
+    },
     include_package_data=True,
-    install_requires=[str(r.req) for r in install_requires],
+    exclude_package_data={
+        '': ['test*.py', 'tests/*.env', '**/tests.py'],
+    },
+    python_requires='>=2.7',
+    install_requires=[str(r.req) for r in install_requires] + ['Django>=1.10'],
+    extras_require={
+        'factories': ['factory-boy'],
+    },
     license="MIT license",
     zip_safe=False,
     keywords='django-model-cleanup',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 3 - Alpha',
+        'Framework :: Django :: 1.10',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
-        "Programming Language :: Python :: 2",
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
     ],
-    test_suite='tests',
+    test_suite='runtests.run_tests',
     tests_require=[str(r.req) for r in test_requirements],
-    setup_requires=setup_requirements,
+    # https://docs.pytest.org/en/latest/goodpractices.html#integrating-with-setuptools-python-setup-py-test-pytest-runner
+    setup_requires=['pytest-runner'],
 )
