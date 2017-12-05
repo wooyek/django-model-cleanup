@@ -4,18 +4,12 @@
 """Tests for `django-model-cleanup` package."""
 
 import pytest
-
-import django_model_cleanup
-from django.utils.translation import override
-
-django_model_cleanup.__version__
-from django_model_cleanup.errors import ExtensibleValidationError as ValidationError
-
-import pytest
-from django.core.exceptions import NON_FIELD_ERRORS
 from django.db.models.fields.related import ForeignKey
 from django.forms.utils import ErrorDict, ErrorList
 from django.utils import translation
+from django.utils.translation import override
+
+from django_model_cleanup.errors import ExtensibleValidationError as ValidationError
 
 
 def test_init_with_string():

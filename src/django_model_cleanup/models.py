@@ -3,7 +3,8 @@ import inspect
 
 from django.core.exceptions import ValidationError
 from django.utils.functional import cached_property
-from django_model_cleanup.errors import ExtensibleValidationError
+
+from .errors import ExtensibleValidationError
 
 
 class CleanMixin(object):
