@@ -5,4 +5,4 @@ from .models import CleanMixin  # noqa F401
 
 __author__ = """Janusz Skonieczny"""
 __email__ = 'js+pypi@bravelabs.pl'
-__version__ = '0.1.0'
+__version__ = '0.1.1'
