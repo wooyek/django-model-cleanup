@@ -40,20 +40,13 @@ Mixins for model cleanup methods and validation error concatenations
 * Free software: MIT license
 * Documentation: https://django-model-cleanup.readthedocs.io.
 
-Features
---------
+Features of CleanMixin
+----------------------
 
-* Pending :D
-
-Demo
-----
-
-To run an example project for this django reusable app, click the button below and start a demo serwer on Heroku
-
-.. image:: https://www.herokucdn.com/deploy/button.png
-    :target: https://heroku.com/deploy
-    :alt: Deploy Django Opt-out example project to Heroku
-
+* Provides `clean` method implementation
+* Call to `full_clean` will result in call to all `clean_*` methods
+* All methods will get called regardless of validation errors - get all errors at once
+* Auto mapping of errors to field names based on clean method names, if errors have no error_dict
 
 Quickstart
 ----------
@@ -62,29 +55,55 @@ Install Django Model Cleanup::
 
     pip install django-model-cleanup
 
-Add it to your `INSTALLED_APPS`:
+Add mixin in your models and enjoy `clean_` method collection and error concatenation when `full_clean` is called:
 
 .. code-block:: python
 
-    INSTALLED_APPS = (
-        ...
-        'django_model_cleanup.apps.DjangoModelCleanupConfig',
-        ...
-    )
+    from django.core.exceptions import ValidationError
+    from django.db import models
+    from django.utils.translation import ugettext_lazy as _
+    from django_model_cleanup import CleanMixin, ExtensibleValidationError
 
-Add Django Model Cleanup's URL patterns:
+
+    class SomeModel(CleanMixin, models.Model):
+        lorem = models.CharField(max_length=10, blank=True)
+
+        def clean_foo(self):
+            raise ValidationError('Foo is bad')
+
+        def clean_bar(self):
+            raise ExtensibleValidationError({'bar': _('Bar is wrong cause %s > %s!')}, code='bar', params=(2, 1))
+
+        def clean_legacy(self):
+            # We can't init ValidationError as one-liner, cause dict + params are not compatible
+            # We need to wrap a message in ValidationError and put that in dict indicating a field
+            msg = _('Bar legacy error %s > %s!')
+            error = ValidationError(msg, code='bar', params=(7, 5))
+            raise ValidationError({'bar': error})
+
+Each error handling and concatenation is no longer required:
 
 .. code-block:: python
 
-    from django_model_cleanup import urls as django_model_cleanup_urls
-
-
-    urlpatterns = [
-        ...
-        url(r'^', include(django_model_cleanup_urls)),
-        ...
-    ]
-
+        # This is not longer required:
+        def clean(self):
+            errors = []
+            try:
+                self.clean_foo()
+            except ValidationError as ex:
+                errors.append(ex)
+            errors = []
+            try:
+                self.clean_bar()
+            except ValidationError as ex:
+                errors.append(ex)
+            errors = []
+            try:
+                self.clean_legacy()
+            except ValidationError as ex:
+                errors.append(ex)
+            if errors:
+                raise ValidationError(errors)
 
 Running Tests
 -------------

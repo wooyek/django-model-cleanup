@@ -6,6 +6,7 @@
 import pytest
 
 import django_model_cleanup
+from django.utils.translation import override
 
 django_model_cleanup.__version__
 from django_model_cleanup.errors import ExtensibleValidationError as ValidationError
@@ -239,5 +240,5 @@ def test_forms_error_dict():
 
     assert form_errors == {'boo': ["Foo instance with Bar 'Baz' does not exist."], 'zap': ['An error here!', 'Yet another one!']}
     # Let's find out how language change will affect the result
-    translation.activate('fr')
-    assert form_errors == {'boo': ["L'instance Foo avec 'Baz' dans Bar n'existe pas."], 'zap': ['An error here!', 'Yet another one!']}
+    with override('fr'):
+        assert form_errors == {'boo': ["L'instance Foo avec 'Baz' dans Bar n'existe pas."], 'zap': ['An error here!', 'Yet another one!']}

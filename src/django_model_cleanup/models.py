@@ -3,6 +3,7 @@ import inspect
 
 from django.core.exceptions import ValidationError
 from django.utils.functional import cached_property
+from django_model_cleanup.errors import ExtensibleValidationError
 
 
 class CleanMixin(object):
@@ -27,17 +28,28 @@ class ValidationManager(object):
         self.errors = []
         self.collect_validation_errors()
         if self.errors:
-            raise ValidationError(self.errors)
+            raise ExtensibleValidationError(self.errors)
 
     def collect_validation_errors(self):
         for name in self.clean_methods:
-            method = getattr(name, self.model)
+            method = getattr(self.model, name)
             try:
                 if inspect.isgeneratorfunction(method):
                     self.errors.extend(method())
                 else:
                     error = method()
                     if isinstance(error, ValidationError):
-                        self.errors.append(error)
+                        self.append_error(error, name)
             except ValidationError as ex:
-                self.errors.append(ex)
+                self.append_error(ex, name)
+
+    def append_error(self, error, clean_name):
+        if not hasattr(error, 'error_dict'):
+            field_name = self.get_field_name(clean_name)
+            error = ValidationError({field_name: error})
+        self.errors.append(error)
+
+    # noinspection PyMethodMayBeStatic
+    def get_field_name(self, clean_name):
+        field_name = clean_name.replace('clean_', '')
+        return field_name
